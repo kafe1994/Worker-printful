@@ -1,0 +1,19 @@
+name = "printful-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Variables de entorno para configuración
+[vars]
+PRINTFUL_LANGUAGE = "es_ES"
+
+# Variables secretas (se configuran manualmente en el dashboard)
+# PRINTFUL_API_KEY (requerida)
+
+# Assets (archivos estáticos)
+#[[assets]] 
+#  directory = "./public"
+
+# Routes personalizadas (opcional)
+#[[routes]]
+#  pattern = "api.example.com/*"
+#  zone_name = "example.com"

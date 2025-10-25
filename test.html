@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Printful API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .success {
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Printful API Test</h1>
+    <p>Testea tu worker de Printful desde el navegador</p>
+
+    <!-- Configuración -->
+    <div>
+        <h3>⚙️ Configuración</h3>
+        <label>
+            URL del Worker:
+            <input type="text" id="workerUrl" placeholder="https://tu-worker.tu-cuenta.workers.dev" style="width: 400px;">
+        </label>
+        <p><em>Nota: Asegúrate de configurar CORS en tu worker</em></p>
+    </div>
+
+    <!-- Botones de prueba -->
+    <div>
+        <h3>🚀 Endpoints de prueba</h3>
+        <button class="button" onclick="testHealth()">Health Check</button>
+        <button class="button" onclick="testApi()">API Info</button>
+        <button class="button" onclick="testProducts()">Productos</button>
+        <button class="button" onclick="testOrders()">Pedidos</button>
+    </div>
+
+    <!-- Respuestas -->
+    <div id="responses"></div>
+
+    <script>
+        // Configuración
+        const WORKER_URL = document.getElementById('workerUrl').placeholder;
+
+        // Función para mostrar respuestas
+        function showResponse(title, response, isError = false) {
+            const responsesDiv = document.getElementById('responses');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const responseDiv = document.createElement('div');
+            responseDiv.className = `response ${isError ? 'error' : 'success'}`;
+            responseDiv.innerHTML = `
+                <h4>${title} (${timestamp})</h4>
+                <strong>URL:</strong> ${response.url}<br>
+                <strong>Status:</strong> ${response.status}<br>
+                <strong>Response:</strong>
+                <pre>${JSON.stringify(response.data, null, 2)}</pre>
+            `;
+            
+            responsesDiv.appendChild(responseDiv);
+            responsesDiv.scrollTop = responsesDiv.scrollHeight;
+        }
+
+        // Función para hacer requests
+        async function makeRequest(endpoint) {
+            const workerUrl = document.getElementById('workerUrl').value || WORKER_URL;
+            const url = `${workerUrl}${endpoint}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                showResponse(`GET ${endpoint}`, {
+                    url,
+                    status: response.status,
+                    data
+                }, !response.ok);
+                
+            } catch (error) {
+                showResponse(`GET ${endpoint}`, {
+                    url,
+                    status: 'Error',
+                    data: { error: error.message }
+                }, true);
+            }
+        }
+
+        // Funciones de prueba
+        async function testHealth() {
+            await makeRequest('/api/health');
+        }
+
+        async function testApi() {
+            await makeRequest('/api');
+        }
+
+        async function testProducts() {
+            await makeRequest('/api/products');
+        }
+
+        async function testOrders() {
+            await makeRequest('/api/orders');
+        }
+
+        // Función para limpiar respuestas
+        function clearResponses() {
+            document.getElementById('responses').innerHTML = '';
+        }
+
+        // Auto-configurar URL si está disponible
+        if (window.location.hostname !== 'localhost') {
+            document.getElementById('workerUrl').value = `https://${window.location.host}`;
+        }
+    </script>
+
+    <!-- Instrucciones -->
+    <div style="margin-top: 30px; padding: 15px; background: #e9ecef; border-radius: 4px;">
+        <h3>📋 Instrucciones</h3>
+        <ol>
+            <li><strong>Configura tu worker:</strong> Reemplaza <code>tu-worker.tu-cuenta.workers.dev</code> con tu URL real</li>
+            <li><strong>Variables de entorno:</strong> Asegúrate de configurar <code>PRINTFUL_API_KEY</code> en el dashboard</li>
+            <li><strong>Prueba endpoints:</strong> Usa los botones para hacer pruebas</li>
+            <li><strong>CORS:</strong> Si hay errores de CORS, verifica que esté configurado en tu worker</li>
+        </ol>
+        
+        <h4>🚀 Despliegue rápido:</h4>
+        <ol>
+            <li>Sube estos archivos a tu repositorio de GitHub</li>
+            <li>Conecta el repositorio a Cloudflare Pages</li>
+            <li>Configura las variables de entorno en el dashboard</li>
+            <li>¡Listo! Tu worker estará disponible en <code>https://tu-worker.tu-cuenta.workers.dev</code></li>
+        </ol>
+    </div>
+</body>
+</html>
