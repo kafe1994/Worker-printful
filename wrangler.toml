@@ -1,4 +1,4 @@
-name = "printful-api-worker"
+name = "printful-worker"
 main = "printful-worker.js"
 compatibility_date = "2024-01-01"
 
