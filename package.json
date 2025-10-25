@@ -1,0 +1,38 @@
+{
+  "name": "printful-cloudflare-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker proxy para la API de Printful con manejo completo de endpoints, CORS y autenticación",
+  "main": "printful-worker.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev --preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "printful",
+    "api",
+    "proxy",
+    "ecommerce",
+    "print-on-demand"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20230921.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/printful-cloudflare-worker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/printful-cloudflare-worker/issues"
+  },
+  "homepage": "https://github.com/tu-usuario/printful-cloudflare-worker#readme"
+}

@@ -1,0 +1,38 @@
+name = "printful-api-worker"
+main = "printful-worker.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "printful-api-worker"
+
+[env.development]
+name = "printful-api-worker-dev"
+
+# Comandos para Termux:
+# =====================
+# 
+# 1. Autenticar con Cloudflare:
+#    wrangler login
+# 
+# 2. Desplegar el worker:
+#    wrangler deploy
+# 
+# 3. Preview local (antes de desplegar):
+#    wrangler dev
+# 
+# 4. Ver logs en tiempo real:
+#    wrangler tail
+# 
+# 5. Ver información de cuenta:
+#    wrangler whoami
+# 
+# DESPUÉS DEL DESPLIEGUE:
+# =======================
+# 1. Ve al dashboard de Cloudflare: https://dash.cloudflare.com
+# 2. Workers & Pages > Busca "printful-api-worker"
+# 3. Settings > Variables
+# 4. Add Variable:
+#    - Name: PRINTFUL_API_KEY
+#    - Type: Encrypt
+#    - Value: [tu_api_key_de_printful]
+# 5. Save and Deploy
