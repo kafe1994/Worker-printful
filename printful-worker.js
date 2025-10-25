@@ -1,8 +1,8 @@
 /**
- * Cloudflare Pages Function - Printful API Proxy
+ * Cloudflare Worker - Printful API Proxy
  * 
- * Worker optimizado y simplificado para Cloudflare Pages
- * Compatible con Printful API v1
+ * Worker compatible con Cloudflare Workers (no Pages)
+ * Para usar en Cloudflare Workers Dashboard o Wrangler
  * 
  * Variables de entorno requeridas:
  * - PRINTFUL_API_KEY: Tu API key de Printful
@@ -18,35 +18,105 @@
  * - GET /api/files - Listar archivos en la biblioteca
  */
 
-export async function onRequest(context) {
-  const { request, env } = context;
-  
-  // Configuración CORS
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Store-Id, X-PF-Language',
-    'Access-Control-Max-Age': '86400',
-  };
+export default {
+  async fetch(request, env, ctx) {
+    // Configuración CORS
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Store-Id, X-PF-Language',
+      'Access-Control-Max-Age': '86400',
+    };
 
-  // Manejar preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 200, 
-      headers: corsHeaders 
-    });
-  }
+    // Manejar preflight requests
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { 
+        status: 200, 
+        headers: corsHeaders 
+      });
+    }
 
-  const startTime = Date.now();
-  
-  try {
-    // Validar API key
-    if (!env.PRINTFUL_API_KEY) {
+    const startTime = Date.now();
+    
+    try {
+      // Validar API key
+      if (!env.PRINTFUL_API_KEY) {
+        return new Response(JSON.stringify({
+          error: {
+            code: 'CONFIGURATION_ERROR',
+            title: 'API key no configurada',
+            message: 'Por favor configura PRINTFUL_API_KEY en las variables de entorno del Worker',
+            timestamp: new Date().toISOString()
+          }
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const url = new URL(request.url);
+      const path = url.pathname;
+      const method = request.method;
+      const params = url.searchParams;
+
+      console.log(`${method} ${path} - ${new Date().toISOString()}`);
+
+      // Enrutamiento principal
+      let response;
+
+      // Health Check
+      if (path === '/api/health') {
+        response = await handleHealthCheck(env, corsHeaders);
+      }
+      // Info de la API
+      else if (path === '/api' || path === '/api/') {
+        response = await handleApiInfo(corsHeaders);
+      }
+      // Productos
+      else if (path.startsWith('/api/products')) {
+        response = await handleProductsRequest(request, path, params, method, env, corsHeaders);
+      }
+      // Pedidos
+      else if (path.startsWith('/api/orders')) {
+        response = await handleOrdersRequest(request, path, params, method, env, corsHeaders);
+      }
+      // Tiendas
+      else if (path.startsWith('/api/stores')) {
+        response = await handleStoresRequest(path, params, method, env, corsHeaders);
+      }
+      // Archivos
+      else if (path.startsWith('/api/files')) {
+        response = await handleFilesRequest(path, params, method, env, corsHeaders);
+      }
+      // Endpoint no encontrado
+      else {
+        response = new Response(JSON.stringify({
+          error: {
+            code: 'ENDPOINT_NOT_FOUND',
+            title: 'Endpoint no encontrado',
+            message: `El endpoint ${path} no está disponible`,
+            timestamp: new Date().toISOString()
+          }
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Agregar headers de respuesta
+      response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
+      response.headers.set('X-Worker-Version', '2.0.0-worker');
+      
+      return response;
+
+    } catch (error) {
+      console.error('Error no controlado:', error);
+      
       return new Response(JSON.stringify({
         error: {
-          code: 'CONFIGURATION_ERROR',
-          title: 'API key no configurada',
-          message: 'Por favor configura PRINTFUL_API_KEY en las variables de entorno de Pages',
+          code: 'INTERNAL_SERVER_ERROR',
+          title: 'Error interno del servidor',
+          message: error.message || 'Ha ocurrido un error inesperado',
           timestamp: new Date().toISOString()
         }
       }), {
@@ -54,78 +124,8 @@ export async function onRequest(context) {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const method = request.method;
-    const params = url.searchParams;
-
-    console.log(`${method} ${path} - ${new Date().toISOString()}`);
-
-    // Enrutamiento principal
-    let response;
-
-    // Health Check
-    if (path === '/api/health') {
-      response = await handleHealthCheck(env, corsHeaders);
-    }
-    // Info de la API
-    else if (path === '/api' || path === '/api/') {
-      response = await handleApiInfo(corsHeaders);
-    }
-    // Productos
-    else if (path.startsWith('/api/products')) {
-      response = await handleProductsRequest(request, path, params, method, env, corsHeaders);
-    }
-    // Pedidos
-    else if (path.startsWith('/api/orders')) {
-      response = await handleOrdersRequest(request, path, params, method, env, corsHeaders);
-    }
-    // Tiendas
-    else if (path.startsWith('/api/stores')) {
-      response = await handleStoresRequest(path, params, method, env, corsHeaders);
-    }
-    // Archivos
-    else if (path.startsWith('/api/files')) {
-      response = await handleFilesRequest(path, params, method, env, corsHeaders);
-    }
-    // Endpoint no encontrado
-    else {
-      response = new Response(JSON.stringify({
-        error: {
-          code: 'ENDPOINT_NOT_FOUND',
-          title: 'Endpoint no encontrado',
-          message: `El endpoint ${path} no está disponible`,
-          timestamp: new Date().toISOString()
-        }
-      }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Agregar headers de respuesta
-    response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
-    response.headers.set('X-Worker-Version', '2.0.0-pages');
-    
-    return response;
-
-  } catch (error) {
-    console.error('Error no controlado:', error);
-    
-    return new Response(JSON.stringify({
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        title: 'Error interno del servidor',
-        message: error.message || 'Ha ocurrido un error inesperado',
-        timestamp: new Date().toISOString()
-      }
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
   }
-}
+};
 
 /**
  * Manejo de endpoints de productos
@@ -256,9 +256,9 @@ async function handleHealthCheck(env, corsHeaders) {
   return new Response(JSON.stringify({
     status: isHealthy ? 'healthy' : 'unhealthy',
     timestamp: new Date().toISOString(),
-    version: '2.0.0-pages',
+    version: '2.0.0-worker',
     printful_api: isHealthy ? 'configured' : 'not_configured',
-    environment: 'cloudflare-pages'
+    environment: 'cloudflare-worker'
   }), {
     status: isHealthy ? 200 : 503,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -270,9 +270,9 @@ async function handleHealthCheck(env, corsHeaders) {
  */
 async function handleApiInfo(corsHeaders) {
   return new Response(JSON.stringify({
-    name: 'Printful Cloudflare Pages API',
-    version: '2.0.0-pages',
-    description: 'Proxy optimizado para la API de Printful - Compatible con Cloudflare Pages',
+    name: 'Printful Cloudflare Worker API',
+    version: '2.0.0-worker',
+    description: 'Proxy optimizado para la API de Printful - Compatible con Cloudflare Workers',
     endpoints: [
       'GET /api/health - Health check',
       'GET /api - Información de la API',
@@ -302,7 +302,7 @@ async function makePrintfulRequest(method, path, body, env, corsHeaders) {
   const headers = {
     'Authorization': `Bearer ${env.PRINTFUL_API_KEY}`,
     'Content-Type': 'application/json',
-    'User-Agent': 'Printful-Cloudflare-Pages/2.0.0',
+    'User-Agent': 'Printful-Cloudflare-Worker/2.0.0',
   };
 
   // Idioma configurable
