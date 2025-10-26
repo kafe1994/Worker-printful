@@ -55,6 +55,7 @@ export default {
           endpoints: [
             'GET /api/health - Health check',
             'GET /api/products - List MY store products',
+            'GET /api/products/{id} - Get specific product details',
             'GET /api/orders - List MY store orders'
           ]
         }), {
@@ -63,9 +64,24 @@ export default {
         });
       }
 
-      // Products endpoint - CORREGIDO: usa store/products
+      // Products endpoint - MEJORADO: maneja productos generales y específicos
       if (path.startsWith('/api/products')) {
-        const printfulUrl = 'https://api.printful.com/store/products';
+        // Extraer el ID del producto si existe en la URL
+        const pathParts = path.split('/');
+        const productId = pathParts[3]; // Para /api/products/123
+        
+        let printfulUrl;
+        
+        if (productId) {
+          // Si hay ID, obtener producto específico
+          printfulUrl = `https://api.printful.com/store/products/${productId}`;
+        } else {
+          // Si no hay ID, obtener lista de productos
+          const limit = url.searchParams.get('limit') || '20';
+          const offset = url.searchParams.get('offset') || '0';
+          printfulUrl = `https://api.printful.com/store/products?limit=${limit}&offset=${offset}`;
+        }
+
         const response = await fetch(printfulUrl, {
           headers: {
             'Authorization': `Bearer ${env.PRINTFUL_API_KEY}`,
@@ -80,7 +96,7 @@ export default {
         });
       }
 
-      // Orders endpoint - CORREGIDO: usa store/orders
+      // Orders endpoint
       if (path.startsWith('/api/orders')) {
         if (request.method === 'GET') {
           const printfulUrl = 'https://api.printful.com/store/orders';
@@ -106,6 +122,7 @@ export default {
           '/api/health',
           '/api',
           '/api/products',
+          '/api/products/{id}',
           '/api/orders'
         ]
       }), {

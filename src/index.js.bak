@@ -54,8 +54,8 @@ export default {
           version: '1.0.0',
           endpoints: [
             'GET /api/health - Health check',
-            'GET /api/products - List products',
-            'GET /api/orders - List orders'
+            'GET /api/products - List MY store products',
+            'GET /api/orders - List MY store orders'
           ]
         }), {
           status: 200,
@@ -63,9 +63,9 @@ export default {
         });
       }
 
-      // Products endpoint
+      // Products endpoint - CORREGIDO: usa store/products
       if (path.startsWith('/api/products')) {
-        const printfulUrl = 'https://api.printful.com/products';
+        const printfulUrl = 'https://api.printful.com/store/products';
         const response = await fetch(printfulUrl, {
           headers: {
             'Authorization': `Bearer ${env.PRINTFUL_API_KEY}`,
@@ -80,10 +80,10 @@ export default {
         });
       }
 
-      // Orders endpoint
+      // Orders endpoint - CORREGIDO: usa store/orders
       if (path.startsWith('/api/orders')) {
         if (request.method === 'GET') {
-          const printfulUrl = 'https://api.printful.com/orders';
+          const printfulUrl = 'https://api.printful.com/store/orders';
           const response = await fetch(printfulUrl, {
             headers: {
               'Authorization': `Bearer ${env.PRINTFUL_API_KEY}`,
